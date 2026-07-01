@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Helvetica Light'}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Helvetica Light'; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1"># Snippet Manager — Detailed Design</p>
+<p class="p2"><br></p>
+<p class="p1">| Field | Value |</p>
+<p class="p1">|-------|-------|</p>
+<p class="p1">| Document version | 1.0 |</p>
+<p class="p1">| App version | 1.0 (MARKETING_VERSION) |</p>
+<p class="p1">| Last updated | 2026-07-01 |</p>
+<p class="p1">| Target OS | macOS 14.0+ |</p>
+<p class="p2"><br></p>
+<p class="p1">**Japanese:** [設計書.md](設計書.md)</p>
+<p class="p2"><br></p>
+<p class="p1">---</p>
+<p class="p2"><br></p>
+<p class="p1">## 1. Purpose &amp; Scope</p>
+<p class="p2"><br></p>
+<p class="p1">### 1.1 Purpose</p>
+<p class="p2"><br></p>
+<p class="p1">Provide a menu-bar resident macOS app that invokes user-defined text snippets via a **global hotkey** and **auto-pastes** into the frontmost application.</p>
+<p class="p2"><br></p>
+<p class="p1">### 1.2 In Scope</p>
+<p class="p2"><br></p>
+<p class="p1">- Menu bar agent (`LSUIElement`)</p>
+<p class="p1">- User-configurable global hotkey</p>
+<p class="p1">- Numbered `NSMenu` snippet picker</p>
+<p class="p1">- Folder hierarchy with snippet CRUD</p>
+<p class="p1">- Drag &amp; drop move/reorder</p>
+<p class="p1">- Launch at login</p>
+<p class="p1">- UserDefaults persistence</p>
+<p class="p2"><br></p>
+<p class="p1">### 1.3 Out of Scope</p>
+<p class="p2"><br></p>
+<p class="p1">- Clipboard history</p>
+<p class="p1">- iCloud / file sync</p>
+<p class="p1">- Import/export</p>
+<p class="p1">- Windows / iOS</p>
+<p class="p2"><br></p>
+<p class="p1">---</p>
+<p class="p2"><br></p>
+<p class="p1">## 2. System Architecture</p>
+<p class="p2"><br></p>
+<p class="p1">### 2.1 Overview</p>
+<p class="p2"><br></p>
+<p class="p1">```mermaid</p>
+<p class="p1">flowchart TB</p>
+<p class="p1"><span class="Apple-converted-space">  </span>subgraph UI</p>
+<p class="p1"><span class="Apple-converted-space">    </span>MB[MenuBar / NSStatusItem]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>PREF[Preferences Window]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>MENU[Snippet NSMenu Popup]</p>
+<p class="p1"><span class="Apple-converted-space">  </span>end</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>subgraph Core</p>
+<p class="p1"><span class="Apple-converted-space">    </span>AD[AppDelegate]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>SMC[SnippetMenuController]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>STORE[SnippetStore]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>PC[PasteController]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>LAL[LaunchAtLoginManager]</p>
+<p class="p1"><span class="Apple-converted-space">  </span>end</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>subgraph External</p>
+<p class="p1"><span class="Apple-converted-space">    </span>KS[KeyboardShortcuts SPM]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>UD[UserDefaults]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>AX[Accessibility / CGEvent]</p>
+<p class="p1"><span class="Apple-converted-space">  </span>end</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>MB --&gt; AD</p>
+<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; SMC</p>
+<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; KS</p>
+<p class="p1"><span class="Apple-converted-space">  </span>SMC --&gt; MENU</p>
+<p class="p1"><span class="Apple-converted-space">  </span>SMC --&gt; STORE</p>
+<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; PC</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; STORE</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; LAL</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; KS</p>
+<p class="p1"><span class="Apple-converted-space">  </span>STORE --&gt; UD</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PC --&gt; AX</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">### 2.2 Technology Stack</p>
+<p class="p2"><br></p>
+<p class="p1">| Layer | Technology |</p>
+<p class="p1">|-------|------------|</p>
+<p class="p1">| UI | SwiftUI + AppKit (NSOutlineView, NSMenu) |</p>
+<p class="p1">| Language | Swift 5 |</p>
+<p class="p1">| Minimum OS | macOS 14.0 |</p>
+<p class="p1">| Persistence | UserDefaults (JSON) |</p>
+<p class="p1">| Hotkeys | KeyboardShortcuts 3.0.1 |</p>
+<p class="p1">| Login item | ServiceManagement.SMAppService |</p>
+<p class="p1">| Paste | NSPasteboard + CGEvent |</p>
+<p class="p2"><br></p>
+<p class="p1">### 2.3 Project Layout</p>
+<p class="p2"><br></p>
+<p class="p1">See [SETUP.md](SETUP.md) for the full file list.</p>
+<p class="p2"><br></p>
+<p class="p1">---</p>
+<p class="p2"><br></p>
+<p class="p1">## 3. Functional Design</p>
+<p class="p2"><br></p>
+<p class="p1">### 3.1 Agent Mode</p>
+<p class="p2"><br></p>
+<p class="p1">| Setting | Value |</p>
+<p class="p1">|---------|-------|</p>
+<p class="p1">| `INFOPLIST_KEY_LSUIElement` | YES |</p>
+<p class="p1">| `NSApp.setActivationPolicy` | `.accessory` |</p>
+<p class="p1">| Dock icon | Hidden |</p>
+<p class="p1">| Quit | Menu bar only (⌘Q) |</p>
+<p class="p2"><br></p>
+<p class="p1">### 3.2 Global Hotkey</p>
+<p class="p2"><br></p>
+<p class="p1">- **Identifier:** `showSnippetPicker`</p>
+<p class="p1">- **Default:** `Cmd + Shift + V`</p>
+<p class="p1">- **Persistence:** KeyboardShortcuts → UserDefaults</p>
+<p class="p1">- **UI:** `KeyboardShortcuts.Recorder` in Preferences → Shortcuts</p>
+<p class="p1">- **Handler:** `KeyboardShortcuts.onKeyUp(for: .showSnippetPicker)`</p>
+<p class="p2"><br></p>
+<p class="p1">### 3.3 Snippet Menu</p>
+<p class="p2"><br></p>
+<p class="p1">Built dynamically by `SnippetMenuController`.</p>
+<p class="p2"><br></p>
+<p class="p1">```</p>
+<p class="p1">Snippets<span class="Apple-converted-space">            </span>(disabled header)</p>
+<p class="p1">├─ Folder A<span class="Apple-converted-space">  </span>▶</p>
+<p class="p1">│ <span class="Apple-converted-space">  </span>├─ 1. Title A <span class="Apple-converted-space">  </span>(key 1)</p>
+<p class="p1">│ <span class="Apple-converted-space">  </span>└─ 2. Title B <span class="Apple-converted-space">  </span>(key 2)</p>
+<p class="p1">└─ Folder B<span class="Apple-converted-space">  </span>▶</p>
+<p class="p1"><span class="Apple-converted-space">    </span>└─ 3. Title C</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">| Spec | Value |</p>
+<p class="p1">|------|-------|</p>
+<p class="p1">| Position | `NSEvent.mouseLocation` |</p>
+<p class="p1">| Numbering | `{n}. {title}` (global across folders) |</p>
+<p class="p1">| Numeric keys | 1–9, 0 inside submenu |</p>
+<p class="p1">| Tooltip | Snippet body |</p>
+<p class="p1">| Title max | 50 chars + `…` |</p>
+<p class="p2"><br></p>
+<p class="p1">### 3.4 Auto-Paste Pipeline</p>
+<p class="p2"><br></p>
+<p class="p1">`PasteController.paste` executes in order:</p>
+<p class="p2"><br></p>
+<p class="p1">1. Write string to `NSPasteboard.general`</p>
+<p class="p1">2. Activate previously frontmost app</p>
+<p class="p1">3. Wait 0.1 seconds</p>
+<p class="p1">4. Post `Cmd+V` via `CGEvent` (virtualKey 9, `.maskCommand`)</p>
+<p class="p2"><br></p>
+<p class="p1">Requires Accessibility trust (`AXIsProcessTrusted()`).</p>
+<p class="p2"><br></p>
+<p class="p1">### 3.5 Snippet Editor</p>
+<p class="p2"><br></p>
+<p class="p1">| Component | Responsibility |</p>
+<p class="p1">|-----------|----------------|</p>
+<p class="p1">| `SnippetEditorView` | Toolbar, split layout, editor pane |</p>
+<p class="p1">| `SnippetOutlineView` | NSOutlineView, selection, drag &amp; drop |</p>
+<p class="p1">| `SnippetStore` | CRUD, move, persist |</p>
+<p class="p2"><br></p>
+<p class="p1">**Selection model:** `.folder(UUID)` | `.snippet(folderID, snippetID)`</p>
+<p class="p2"><br></p>
+<p class="p1">**Drag &amp; drop pasteboard:** `snippetUUID|sourceFolderUUID`</p>
+<p class="p2"><br></p>
+<p class="p1">### 3.6 Preferences</p>
+<p class="p2"><br></p>
+<p class="p1">Sidebar via `NavigationSplitView`:</p>
+<p class="p2"><br></p>
+<p class="p1">| Tab | Content |</p>
+<p class="p1">|-----|---------|</p>
+<p class="p1">| General | Launch at login |</p>
+<p class="p1">| Shortcuts | Hotkey recorder |</p>
+<p class="p1">| Snippets | Embedded editor |</p>
+<p class="p2"><br></p>
+<p class="p1">---</p>
+<p class="p2"><br></p>
+<p class="p1">## 4. Data Model</p>
+<p class="p2"><br></p>
+<p class="p1">### 4.1 Snippet</p>
+<p class="p2"><br></p>
+<p class="p1">| Field | Type | Description |</p>
+<p class="p1">|-------|------|-------------|</p>
+<p class="p1">| id | UUID | Primary key |</p>
+<p class="p1">| title | String | Display name |</p>
+<p class="p1">| content | String | Pasted text |</p>
+<p class="p2"><br></p>
+<p class="p1">### 4.2 SnippetFolder</p>
+<p class="p2"><br></p>
+<p class="p1">| Field | Type | Description |</p>
+<p class="p1">|-------|------|-------------|</p>
+<p class="p1">| id | UUID | Primary key |</p>
+<p class="p1">| title | String | Folder name |</p>
+<p class="p1">| index | Int | Sort order |</p>
+<p class="p1">| snippets | [Snippet] | Children |</p>
+<p class="p2"><br></p>
+<p class="p1">### 4.3 Persistence</p>
+<p class="p2"><br></p>
+<p class="p1">| Key | Content |</p>
+<p class="p1">|-----|---------|</p>
+<p class="p1">| `snippetFolders` | JSON array of folders |</p>
+<p class="p1">| `snippets` | Legacy flat list (migrated on first load) |</p>
+<p class="p2"><br></p>
+<p class="p1">---</p>
+<p class="p2"><br></p>
+<p class="p1">## 5. Non-Functional Requirements</p>
+<p class="p2"><br></p>
+<p class="p1">| Topic | Detail |</p>
+<p class="p1">|-------|--------|</p>
+<p class="p1">| Sandbox | Disabled (CGEvent requirement) |</p>
+<p class="p1">| Hardened Runtime | Enabled |</p>
+<p class="p1">| Permissions | Accessibility; Input Monitoring if needed |</p>
+<p class="p1">| Scale | Hundreds of snippets via UserDefaults |</p>
+<p class="p2"><br></p>
+<p class="p1">---</p>
+<p class="p2"><br></p>
+<p class="p1">## 6. Known Limitations</p>
+<p class="p2"><br></p>
+<p class="p1">1. `CGEvent` paste uses US virtual key code 9 for `V`</p>
+<p class="p1">2. No clipboard history or per-folder hotkeys</p>
+<p class="p1">3. Numeric keys work **after** opening a folder submenu</p>
+<p class="p1">4. UserDefaults not suited for very large datasets</p>
+<p class="p2"><br></p>
+<p class="p1">---</p>
+<p class="p2"><br></p>
+<p class="p1">## 7. Revision History</p>
+<p class="p2"><br></p>
+<p class="p1">| Ver | Date | Notes |</p>
+<p class="p1">|-----|------|-------|</p>
+<p class="p1">| 1.0 | 2026-07-01 | Initial release |</p>
+<p class="p2"><br></p>
+<p class="p1">---</p>
+<p class="p2"><br></p>
+<p class="p1">## Appendix: PDF Export</p>
+<p class="p2"><br></p>
+<p class="p1">HTML version: [DESIGN.html](DESIGN.html)</p>
+<p class="p2"><br></p>
+<p class="p1">Open in a browser and use **File → Export as PDF**.</p>
+</body>
+</html>
