@@ -16,9 +16,9 @@
 <p class="p2"><br></p>
 <p class="p1">| Field | Value |</p>
 <p class="p1">|-------|-------|</p>
-<p class="p1">| Document version | 1.0 |</p>
+<p class="p1">| Document version | 1.1 |</p>
 <p class="p1">| App version | 1.0 (MARKETING_VERSION) |</p>
-<p class="p1">| Last updated | 2026-07-01 |</p>
+<p class="p1">| Last updated | 2026-07-02 |</p>
 <p class="p1">| Target OS | macOS 14.0+ |</p>
 <p class="p2"><br></p>
 <p class="p1">**Japanese:** [設計書.md](設計書.md)</p>
@@ -29,21 +29,23 @@
 <p class="p2"><br></p>
 <p class="p1">### 1.1 Purpose</p>
 <p class="p2"><br></p>
-<p class="p1">Provide a menu-bar resident macOS app that invokes user-defined text snippets via a **global hotkey** and **auto-pastes** into the frontmost application.</p>
+<p class="p1">Provide a menu-bar resident macOS app that invokes user-defined text snippets and **clipboard history** via **global hotkeys** and **auto-pastes** into the frontmost application.</p>
 <p class="p2"><br></p>
 <p class="p1">### 1.2 In Scope</p>
 <p class="p2"><br></p>
 <p class="p1">- Menu bar agent (`LSUIElement`)</p>
-<p class="p1">- User-configurable global hotkey</p>
+<p class="p1">- User-configurable global hotkeys (3 kinds)</p>
 <p class="p1">- Numbered `NSMenu` snippet picker</p>
+<p class="p1">- Clipboard history (Clipy-equivalent: monitoring, dedup, inline + folder chunking)</p>
 <p class="p1">- Folder hierarchy with snippet CRUD</p>
 <p class="p1">- Drag &amp; drop move/reorder</p>
 <p class="p1">- Launch at login</p>
-<p class="p1">- UserDefaults persistence</p>
+<p class="p1">- UserDefaults / JSON file persistence</p>
 <p class="p2"><br></p>
 <p class="p1">### 1.3 Out of Scope</p>
 <p class="p2"><br></p>
-<p class="p1">- Clipboard history</p>
+<p class="p1">- Image / RTF / file types in clipboard history (text only)</p>
+<p class="p1">- Per-app history exclusion list</p>
 <p class="p1">- iCloud / file sync</p>
 <p class="p1">- Import/export</p>
 <p class="p1">- Windows / iOS</p>
@@ -56,37 +58,44 @@
 <p class="p2"><br></p>
 <p class="p1">```mermaid</p>
 <p class="p1">flowchart TB</p>
-<p class="p1"><span class="Apple-converted-space">  </span>subgraph UI</p>
-<p class="p1"><span class="Apple-converted-space">    </span>MB[MenuBar / NSStatusItem]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>PREF[Preferences Window]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>MENU[Snippet NSMenu Popup]</p>
-<p class="p1"><span class="Apple-converted-space">  </span>end</p>
+<p class="p1"><span class="Apple-converted-space">  </span>subgraph UI</p>
+<p class="p1"><span class="Apple-converted-space">    </span>MB[MenuBar / NSStatusItem]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>PREF[Preferences Window]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>MENU[NSMenu Popup: history + snippets]</p>
+<p class="p1"><span class="Apple-converted-space">  </span>end</p>
 <p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>subgraph Core</p>
-<p class="p1"><span class="Apple-converted-space">    </span>AD[AppDelegate]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>SMC[SnippetMenuController]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>STORE[SnippetStore]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>PC[PasteController]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>LAL[LaunchAtLoginManager]</p>
-<p class="p1"><span class="Apple-converted-space">  </span>end</p>
+<p class="p1"><span class="Apple-converted-space">  </span>subgraph Core</p>
+<p class="p1"><span class="Apple-converted-space">    </span>AD[AppDelegate]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>MC[MenuController]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>STORE[SnippetStore]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>HIST[ClipboardHistoryStore]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>PC[PasteController]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>LAL[LaunchAtLoginManager]</p>
+<p class="p1"><span class="Apple-converted-space">  </span>end</p>
 <p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>subgraph External</p>
-<p class="p1"><span class="Apple-converted-space">    </span>KS[KeyboardShortcuts SPM]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>UD[UserDefaults]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>AX[Accessibility / CGEvent]</p>
-<p class="p1"><span class="Apple-converted-space">  </span>end</p>
+<p class="p1"><span class="Apple-converted-space">  </span>subgraph External</p>
+<p class="p1"><span class="Apple-converted-space">    </span>KS[KeyboardShortcuts SPM]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>UD[UserDefaults]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>FS[Application Support JSON]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>PB[NSPasteboard]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>AX[Accessibility / CGEvent]</p>
+<p class="p1"><span class="Apple-converted-space">  </span>end</p>
 <p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>MB --&gt; AD</p>
-<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; SMC</p>
-<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; KS</p>
-<p class="p1"><span class="Apple-converted-space">  </span>SMC --&gt; MENU</p>
-<p class="p1"><span class="Apple-converted-space">  </span>SMC --&gt; STORE</p>
-<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; PC</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; STORE</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; LAL</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; KS</p>
-<p class="p1"><span class="Apple-converted-space">  </span>STORE --&gt; UD</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PC --&gt; AX</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MB --&gt; AD</p>
+<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; MC</p>
+<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; KS</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MC --&gt; MENU</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MC --&gt; STORE</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MC --&gt; HIST</p>
+<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; PC</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; STORE</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; HIST</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; LAL</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; KS</p>
+<p class="p1"><span class="Apple-converted-space">  </span>STORE --&gt; UD</p>
+<p class="p1"><span class="Apple-converted-space">  </span>HIST --&gt; FS</p>
+<p class="p1"><span class="Apple-converted-space">  </span>HIST --&gt; PB</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PC --&gt; AX</p>
 <p class="p1">```</p>
 <p class="p2"><br></p>
 <p class="p1">### 2.2 Technology Stack</p>
@@ -96,9 +105,10 @@
 <p class="p1">| UI | SwiftUI + AppKit (NSOutlineView, NSMenu) |</p>
 <p class="p1">| Language | Swift 5 |</p>
 <p class="p1">| Minimum OS | macOS 14.0 |</p>
-<p class="p1">| Persistence | UserDefaults (JSON) |</p>
+<p class="p1">| Persistence | UserDefaults (JSON) + JSON file in Application Support (history) |</p>
 <p class="p1">| Hotkeys | KeyboardShortcuts 3.0.1 |</p>
 <p class="p1">| Login item | ServiceManagement.SMAppService |</p>
+<p class="p1">| Clipboard monitoring | NSPasteboard.changeCount polling (0.75 s) |</p>
 <p class="p1">| Paste | NSPasteboard + CGEvent |</p>
 <p class="p2"><br></p>
 <p class="p1">### 2.3 Project Layout</p>
@@ -118,25 +128,32 @@
 <p class="p1">| Dock icon | Hidden |</p>
 <p class="p1">| Quit | Menu bar only (⌘Q) |</p>
 <p class="p2"><br></p>
-<p class="p1">### 3.2 Global Hotkey</p>
+<p class="p1">### 3.2 Global Hotkeys</p>
 <p class="p2"><br></p>
-<p class="p1">- **Identifier:** `showSnippetPicker`</p>
-<p class="p1">- **Default:** `Cmd + Shift + V`</p>
+<p class="p1">Three Clipy-equivalent hotkeys (`KeyboardShortcuts.Name`):</p>
+<p class="p2"><br></p>
+<p class="p1">| Identifier | Menu | Default |</p>
+<p class="p1">|------------|------|---------|</p>
+<p class="p1">| `showMainMenu` | Main (history + snippets) | `Cmd + Shift + V` |</p>
+<p class="p1">| `showHistoryMenu` | History only | `Cmd + Control + V` |</p>
+<p class="p1">| `showSnippetPicker` | Snippets only | `Cmd + Shift + B` |</p>
+<p class="p2"><br></p>
 <p class="p1">- **Persistence:** KeyboardShortcuts → UserDefaults</p>
 <p class="p1">- **UI:** `KeyboardShortcuts.Recorder` in Preferences → Shortcuts</p>
-<p class="p1">- **Handler:** `KeyboardShortcuts.onKeyUp(for: .showSnippetPicker)`</p>
+<p class="p1">- **Handler:** `KeyboardShortcuts.onKeyUp(for:)`</p>
+<p class="p1">- **Migration:** if a legacy user explicitly recorded `Cmd+Shift+V` for `showSnippetPicker`, it is reset to its default at launch to avoid double-firing with `showMainMenu`</p>
 <p class="p2"><br></p>
 <p class="p1">### 3.3 Snippet Menu</p>
 <p class="p2"><br></p>
-<p class="p1">Built dynamically by `SnippetMenuController`.</p>
+<p class="p1">Built dynamically by `MenuController`.</p>
 <p class="p2"><br></p>
 <p class="p1">```</p>
-<p class="p1">Snippets<span class="Apple-converted-space">            </span>(disabled header)</p>
-<p class="p1">├─ Folder A<span class="Apple-converted-space">  </span>▶</p>
-<p class="p1">│ <span class="Apple-converted-space">  </span>├─ 1. Title A <span class="Apple-converted-space">  </span>(key 1)</p>
-<p class="p1">│ <span class="Apple-converted-space">  </span>└─ 2. Title B <span class="Apple-converted-space">  </span>(key 2)</p>
-<p class="p1">└─ Folder B<span class="Apple-converted-space">  </span>▶</p>
-<p class="p1"><span class="Apple-converted-space">    </span>└─ 3. Title C</p>
+<p class="p1">Snippets            (disabled header)</p>
+<p class="p1">├─ Folder A  ▶</p>
+<p class="p1">│   ├─ 1. Title A   (key 1)</p>
+<p class="p1">│   └─ 2. Title B   (key 2)</p>
+<p class="p1">└─ Folder B  ▶</p>
+<p class="p1"><span class="Apple-converted-space">    </span>└─ 3. Title C</p>
 <p class="p1">```</p>
 <p class="p2"><br></p>
 <p class="p1">| Spec | Value |</p>
@@ -146,6 +163,44 @@
 <p class="p1">| Numeric keys | 1–9, 0 inside submenu |</p>
 <p class="p1">| Tooltip | Snippet body |</p>
 <p class="p1">| Title max | 50 chars + `…` |</p>
+<p class="p2"><br></p>
+<p class="p1">### 3.3b Clipboard History (Clipy-equivalent)</p>
+<p class="p2"><br></p>
+<p class="p1">`ClipboardHistoryStore` monitors and stores; `MenuController` renders menus.</p>
+<p class="p2"><br></p>
+<p class="p1">**Monitoring:**</p>
+<p class="p2"><br></p>
+<p class="p1">- Polls `NSPasteboard.general.changeCount` with a 0.75 s `Timer` (`.common` run-loop mode)</p>
+<p class="p1">- Records plain text (`.string`) only; empty strings ignored</p>
+<p class="p1">- Skips copies declaring `org.nspasteboard.ConcealedType` / `TransientType` / `AutoGeneratedType` (password managers etc.)</p>
+<p class="p1">- Pasteboard content present at launch is not imported</p>
+<p class="p2"><br></p>
+<p class="p1">**Retention:**</p>
+<p class="p2"><br></p>
+<p class="p1">- Newest first; re-copying identical text moves the existing entry to the top (dedup)</p>
+<p class="p1">- Entries beyond max history size (default 30, range 1–100) are dropped oldest-first</p>
+<p class="p2"><br></p>
+<p class="p1">**Menu structure (main / history menus):**</p>
+<p class="p2"><br></p>
+<p class="p1">```</p>
+<p class="p1">History            (disabled header)</p>
+<p class="p1">├─ 1. Most recent   (key 1)</p>
+<p class="p1">├─ …</p>
+<p class="p1">├─ 10. Tenth        (key 0)</p>
+<p class="p1">├─ 11 - 20  ▶       (folder chunk)</p>
+<p class="p1">└─ 21 - 30  ▶</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">| Spec | Value |</p>
+<p class="p1">|------|-------|</p>
+<p class="p1">| Inline items | Default 10 (0–20, configurable) |</p>
+<p class="p1">| Items per folder | Default 10 (1–20, configurable) |</p>
+<p class="p1">| Numbering | Continuous; numeric keys only for first 10 inline items |</p>
+<p class="p1">| Title | First non-empty line, 50 chars max |</p>
+<p class="p1">| Tooltip | Body (up to 500 chars) |</p>
+<p class="p1">| Selection | Same auto-paste pipeline as snippets |</p>
+<p class="p2"><br></p>
+<p class="p1">**Clear history:** status menu "履歴を消去" (with confirmation alert) or Preferences → History tab.</p>
 <p class="p2"><br></p>
 <p class="p1">### 3.4 Auto-Paste Pipeline</p>
 <p class="p2"><br></p>
@@ -177,7 +232,8 @@
 <p class="p1">| Tab | Content |</p>
 <p class="p1">|-----|---------|</p>
 <p class="p1">| General | Launch at login |</p>
-<p class="p1">| Shortcuts | Hotkey recorder |</p>
+<p class="p1">| Shortcuts | Hotkey recorders (main / history / snippets) |</p>
+<p class="p1">| History | Max size, inline count, items per folder, clear history |</p>
 <p class="p1">| Snippets | Embedded editor |</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
@@ -201,12 +257,24 @@
 <p class="p1">| index | Int | Sort order |</p>
 <p class="p1">| snippets | [Snippet] | Children |</p>
 <p class="p2"><br></p>
-<p class="p1">### 4.3 Persistence</p>
+<p class="p1">### 4.3 ClipItem (clipboard history)</p>
 <p class="p2"><br></p>
-<p class="p1">| Key | Content |</p>
+<p class="p1">| Field | Type | Description |</p>
+<p class="p1">|-------|------|-------------|</p>
+<p class="p1">| id | UUID | Primary key |</p>
+<p class="p1">| content | String | Copied text |</p>
+<p class="p1">| copiedAt | Date | Copy timestamp |</p>
+<p class="p2"><br></p>
+<p class="p1">### 4.4 Persistence</p>
+<p class="p2"><br></p>
+<p class="p1">| Location | Content |</p>
 <p class="p1">|-----|---------|</p>
-<p class="p1">| `snippetFolders` | JSON array of folders |</p>
-<p class="p1">| `snippets` | Legacy flat list (migrated on first load) |</p>
+<p class="p1">| UserDefaults `snippetFolders` | JSON array of folders |</p>
+<p class="p1">| UserDefaults `snippets` | Legacy flat list (migrated on first load) |</p>
+<p class="p1">| UserDefaults `clipboardMaxHistorySize` etc. | History settings (max / inline / per-folder counts) |</p>
+<p class="p1">| `~/Library/Application Support/Snippet Manager/clipboard-history.json` | JSON array of ClipItem (atomic writes) |</p>
+<p class="p2"><br></p>
+<p class="p1">History lives in a file (not UserDefaults) so large copied texts cannot bloat the preferences plist.</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
 <p class="p2"><br></p>
@@ -218,15 +286,18 @@
 <p class="p1">| Hardened Runtime | Enabled |</p>
 <p class="p1">| Permissions | Accessibility; Input Monitoring if needed |</p>
 <p class="p1">| Scale | Hundreds of snippets via UserDefaults |</p>
+<p class="p1">| Privacy | History stored locally only; concealed pasteboard types never recorded |</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
 <p class="p2"><br></p>
 <p class="p1">## 6. Known Limitations</p>
 <p class="p2"><br></p>
 <p class="p1">1. `CGEvent` paste uses US virtual key code 9 for `V`</p>
-<p class="p1">2. No clipboard history or per-folder hotkeys</p>
-<p class="p1">3. Numeric keys work **after** opening a folder submenu</p>
-<p class="p1">4. UserDefaults not suited for very large datasets</p>
+<p class="p1">2. No per-folder hotkeys</p>
+<p class="p1">3. Numeric keys work **after** opening a folder submenu (inline history items respond at top level)</p>
+<p class="p1">4. UserDefaults not suited for very large snippet datasets</p>
+<p class="p1">5. Clipboard history is text-only (no images / RTF / files)</p>
+<p class="p1">6. Pasting via this app also records the text into history (same as Clipy)</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
 <p class="p2"><br></p>
@@ -235,6 +306,7 @@
 <p class="p1">| Ver | Date | Notes |</p>
 <p class="p1">|-----|------|-------|</p>
 <p class="p1">| 1.0 | 2026-07-01 | Initial release |</p>
+<p class="p1">| 1.1 | 2026-07-02 | Added Clipy-equivalent clipboard history: 3 global hotkeys, History preferences tab, renamed `SnippetMenuController` to `MenuController` |</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
 <p class="p2"><br></p>

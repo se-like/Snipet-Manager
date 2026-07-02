@@ -16,9 +16,9 @@
 <p class="p2"><br></p>
 <p class="p1">| 項目 | 内容 |</p>
 <p class="p1">|------|------|</p>
-<p class="p1">| ドキュメント版 | 1.0 |</p>
+<p class="p1">| ドキュメント版 | 1.1 |</p>
 <p class="p1">| 対象バージョン | 1.0 (MARKETING_VERSION) |</p>
-<p class="p1">| 最終更新 | 2026-07-01 |</p>
+<p class="p1">| 最終更新 | 2026-07-02 |</p>
 <p class="p1">| 対象 OS | macOS 14.0+ |</p>
 <p class="p2"><br></p>
 <p class="p1">**English:** [DESIGN.md](DESIGN.md)</p>
@@ -29,21 +29,23 @@
 <p class="p2"><br></p>
 <p class="p1">### 1.1 目的</p>
 <p class="p2"><br></p>
-<p class="p1">macOS 上で常駐し、ユーザー定義のテキストスニペットを **グローバルホットキー** から呼び出し、**任意のアプリへ自動ペースト** する。</p>
+<p class="p1">macOS 上で常駐し、ユーザー定義のテキストスニペットと **クリップボード履歴** を **グローバルホットキー** から呼び出し、**任意のアプリへ自動ペースト** する。</p>
 <p class="p2"><br></p>
 <p class="p1">### 1.2 スコープ内</p>
 <p class="p2"><br></p>
 <p class="p1">- メニューバー常駐（LSUIElement）</p>
-<p class="p1">- グローバルホットキー（ユーザー設定可能）</p>
+<p class="p1">- グローバルホットキー（ユーザー設定可能・3 系統）</p>
 <p class="p1">- 番号付き NSMenu スニペットピッカー</p>
+<p class="p1">- クリップボード履歴（Clipy 同等: 監視・重複排除・インライン + フォルダ分割表示）</p>
 <p class="p1">- フォルダ階層とスニペット CRUD</p>
 <p class="p1">- ドラッグ＆ドロップによる移動・並べ替え</p>
 <p class="p1">- ログイン時起動</p>
-<p class="p1">- UserDefaults 永続化</p>
+<p class="p1">- UserDefaults / JSON ファイル永続化</p>
 <p class="p2"><br></p>
 <p class="p1">### 1.3 スコープ外</p>
 <p class="p2"><br></p>
-<p class="p1">- クリップボード履歴</p>
+<p class="p1">- クリップボード履歴の画像・RTF・ファイル形式対応（テキストのみ）</p>
+<p class="p1">- アプリ別の履歴除外リスト</p>
 <p class="p1">- iCloud / ファイル同期</p>
 <p class="p1">- スニペットのインポート/エクスポート</p>
 <p class="p1">- Windows / iOS 版</p>
@@ -56,37 +58,44 @@
 <p class="p2"><br></p>
 <p class="p1">```mermaid</p>
 <p class="p1">flowchart TB</p>
-<p class="p1"><span class="Apple-converted-space">  </span>subgraph UI</p>
-<p class="p1"><span class="Apple-converted-space">    </span>MB[MenuBar / NSStatusItem]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>PREF[Preferences Window]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>MENU[Snippet NSMenu Popup]</p>
-<p class="p1"><span class="Apple-converted-space">  </span>end</p>
+<p class="p1"><span class="Apple-converted-space">  </span>subgraph UI</p>
+<p class="p1"><span class="Apple-converted-space">    </span>MB[MenuBar / NSStatusItem]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>PREF[Preferences Window]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>MENU[NSMenu Popup 履歴+スニペット]</p>
+<p class="p1"><span class="Apple-converted-space">  </span>end</p>
 <p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>subgraph Core</p>
-<p class="p1"><span class="Apple-converted-space">    </span>AD[AppDelegate]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>SMC[SnippetMenuController]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>STORE[SnippetStore]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>PC[PasteController]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>LAL[LaunchAtLoginManager]</p>
-<p class="p1"><span class="Apple-converted-space">  </span>end</p>
+<p class="p1"><span class="Apple-converted-space">  </span>subgraph Core</p>
+<p class="p1"><span class="Apple-converted-space">    </span>AD[AppDelegate]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>MC[MenuController]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>STORE[SnippetStore]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>HIST[ClipboardHistoryStore]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>PC[PasteController]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>LAL[LaunchAtLoginManager]</p>
+<p class="p1"><span class="Apple-converted-space">  </span>end</p>
 <p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>subgraph External</p>
-<p class="p1"><span class="Apple-converted-space">    </span>KS[KeyboardShortcuts SPM]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>UD[UserDefaults]</p>
-<p class="p1"><span class="Apple-converted-space">    </span>AX[Accessibility / CGEvent]</p>
-<p class="p1"><span class="Apple-converted-space">  </span>end</p>
+<p class="p1"><span class="Apple-converted-space">  </span>subgraph External</p>
+<p class="p1"><span class="Apple-converted-space">    </span>KS[KeyboardShortcuts SPM]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>UD[UserDefaults]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>FS[Application Support JSON]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>PB[NSPasteboard]</p>
+<p class="p1"><span class="Apple-converted-space">    </span>AX[Accessibility / CGEvent]</p>
+<p class="p1"><span class="Apple-converted-space">  </span>end</p>
 <p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>MB --&gt; AD</p>
-<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; SMC</p>
-<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; KS</p>
-<p class="p1"><span class="Apple-converted-space">  </span>SMC --&gt; MENU</p>
-<p class="p1"><span class="Apple-converted-space">  </span>SMC --&gt; STORE</p>
-<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; PC</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; STORE</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; LAL</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; KS</p>
-<p class="p1"><span class="Apple-converted-space">  </span>STORE --&gt; UD</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PC --&gt; AX</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MB --&gt; AD</p>
+<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; MC</p>
+<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; KS</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MC --&gt; MENU</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MC --&gt; STORE</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MC --&gt; HIST</p>
+<p class="p1"><span class="Apple-converted-space">  </span>AD --&gt; PC</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; STORE</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; HIST</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; LAL</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PREF --&gt; KS</p>
+<p class="p1"><span class="Apple-converted-space">  </span>STORE --&gt; UD</p>
+<p class="p1"><span class="Apple-converted-space">  </span>HIST --&gt; FS</p>
+<p class="p1"><span class="Apple-converted-space">  </span>HIST --&gt; PB</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PC --&gt; AX</p>
 <p class="p1">```</p>
 <p class="p2"><br></p>
 <p class="p1">### 2.2 技術スタック</p>
@@ -96,9 +105,10 @@
 <p class="p1">| UI | SwiftUI + AppKit（NSOutlineView, NSMenu, NSPanel 相当なし） |</p>
 <p class="p1">| 言語 | Swift 5 |</p>
 <p class="p1">| 最小 SDK | macOS 14.0 |</p>
-<p class="p1">| 永続化 | UserDefaults（JSON） |</p>
+<p class="p1">| 永続化 | UserDefaults（JSON）+ Application Support 配下の JSON ファイル（履歴） |</p>
 <p class="p1">| ホットキー | KeyboardShortcuts 3.0.1 |</p>
 <p class="p1">| ログイン項目 | ServiceManagement.SMAppService |</p>
+<p class="p1">| クリップボード監視 | NSPasteboard.changeCount ポーリング（0.75 秒） |</p>
 <p class="p1">| ペースト | NSPasteboard + CGEvent |</p>
 <p class="p2"><br></p>
 <p class="p1">### 2.3 プロジェクト構成</p>
@@ -107,19 +117,21 @@
 <p class="p1">Snippet Manager/</p>
 <p class="p1">├── Snippet Manager.xcodeproj</p>
 <p class="p1">└── Snippet Manager/</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── Snippet_ManagerApp.swift<span class="Apple-converted-space">      </span># @main, Settings シーン</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── AppDelegate.swift <span class="Apple-converted-space">            </span># 常駐・メニューバー・ホットキー</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── SnippetStore.swift<span class="Apple-converted-space">            </span># データ永続化</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── Snippet.swift / SnippetFolder.swift</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── SnippetMenuController.swift <span class="Apple-converted-space">  </span># NSMenu 構築・ポップアップ</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── SnippetOutlineView.swift<span class="Apple-converted-space">      </span># 編集用 NSOutlineView + D&amp;D</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── SnippetEditorView.swift<span class="Apple-converted-space">        </span># スニペット編集 UI</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── PreferencesView.swift <span class="Apple-converted-space">        </span># 環境設定（3 タブ）</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── PreferencesWindowController.swift</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── PreferencesController.swift</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── PasteController.swift <span class="Apple-converted-space">        </span># ペーストシーケンス</p>
-<p class="p1"><span class="Apple-converted-space">    </span>├── LaunchAtLoginManager.swift</p>
-<p class="p1"><span class="Apple-converted-space">    </span>└── KeyboardShortcuts+Names.swift</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── Snippet_ManagerApp.swift      # @main, Settings シーン</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── AppDelegate.swift             # 常駐・メニューバー・ホットキー</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── SnippetStore.swift            # スニペット永続化</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── Snippet.swift / SnippetFolder.swift</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── ClipItem.swift                # 履歴 1 件のモデル</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── ClipboardHistoryStore.swift   # 履歴の監視・保持・永続化</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── MenuController.swift          # NSMenu 構築（履歴 + スニペット）・ポップアップ</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── SnippetOutlineView.swift      # 編集用 NSOutlineView + D&amp;D</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── SnippetEditorView.swift        # スニペット編集 UI</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── PreferencesView.swift         # 環境設定（4 タブ）</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── PreferencesWindowController.swift</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── PreferencesController.swift</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── PasteController.swift         # ペーストシーケンス</p>
+<p class="p1"><span class="Apple-converted-space">    </span>├── LaunchAtLoginManager.swift</p>
+<p class="p1"><span class="Apple-converted-space">    </span>└── KeyboardShortcuts+Names.swift</p>
 <p class="p1">```</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
@@ -137,25 +149,32 @@
 <p class="p2"><br></p>
 <p class="p1">### 3.2 グローバルホットキー</p>
 <p class="p2"><br></p>
-<p class="p1">- **識別子:** `showSnippetPicker`（`KeyboardShortcuts.Name`）</p>
-<p class="p1">- **デフォルト:** `Cmd + Shift + V`（keyCode 9, modifiers command+shift）</p>
+<p class="p1">Clipy と同等の 3 系統（`KeyboardShortcuts.Name`）。</p>
+<p class="p2"><br></p>
+<p class="p1">| 識別子 | 内容 | デフォルト |</p>
+<p class="p1">|--------|------|-----------|</p>
+<p class="p1">| `showMainMenu` | メイン（履歴 + スニペット） | `Cmd + Shift + V` |</p>
+<p class="p1">| `showHistoryMenu` | 履歴のみ | `Cmd + Control + V` |</p>
+<p class="p1">| `showSnippetPicker` | スニペットのみ | `Cmd + Shift + B` |</p>
+<p class="p2"><br></p>
 <p class="p1">- **永続化:** KeyboardShortcuts ライブラリが UserDefaults へ自動保存</p>
 <p class="p1">- **UI:** `KeyboardShortcuts.Recorder`（環境設定 → ショートカット）</p>
-<p class="p1">- **コールバック:** `KeyboardShortcuts.onKeyUp(for: .showSnippetPicker)`</p>
+<p class="p1">- **コールバック:** `KeyboardShortcuts.onKeyUp(for:)`</p>
+<p class="p1">- **マイグレーション:** 旧版で `showSnippetPicker` に `Cmd+Shift+V` を明示登録済みの場合、`showMainMenu` のデフォルトと二重発火するため起動時にスニペット側をデフォルトへリセット</p>
 <p class="p2"><br></p>
 <p class="p1">### 3.3 スニペットメニュー</p>
 <p class="p2"><br></p>
-<p class="p1">`SnippetMenuController` が `NSMenu` を動的構築する。</p>
+<p class="p1">`MenuController` が `NSMenu` を動的構築する。</p>
 <p class="p2"><br></p>
 <p class="p1">**構造:**</p>
 <p class="p2"><br></p>
 <p class="p1">```</p>
-<p class="p1">スニペット<span class="Apple-converted-space">          </span>（無効ヘッダー）</p>
-<p class="p1">├─ フォルダA<span class="Apple-converted-space">  </span>▶</p>
-<p class="p1">│ <span class="Apple-converted-space">  </span>├─ 1. タイトルA <span class="Apple-converted-space">  </span>(keyEquivalent: 1)</p>
-<p class="p1">│ <span class="Apple-converted-space">  </span>└─ 2. タイトルB <span class="Apple-converted-space">  </span>(keyEquivalent: 2)</p>
-<p class="p1">└─ フォルダB<span class="Apple-converted-space">  </span>▶</p>
-<p class="p1"><span class="Apple-converted-space">    </span>└─ 3. タイトルC</p>
+<p class="p1">スニペット          （無効ヘッダー）</p>
+<p class="p1">├─ フォルダA  ▶</p>
+<p class="p1">│   ├─ 1. タイトルA   (keyEquivalent: 1)</p>
+<p class="p1">│   └─ 2. タイトルB   (keyEquivalent: 2)</p>
+<p class="p1">└─ フォルダB  ▶</p>
+<p class="p1"><span class="Apple-converted-space">    </span>└─ 3. タイトルC</p>
 <p class="p1">```</p>
 <p class="p2"><br></p>
 <p class="p1">| 仕様 | 値 |</p>
@@ -167,26 +186,64 @@
 <p class="p1">| アイコン | folder / doc.plaintext（テンプレート） |</p>
 <p class="p1">| タイトル最大長 | 50 文字（超過時 `…`） |</p>
 <p class="p2"><br></p>
+<p class="p1">### 3.3b クリップボード履歴（Clipy 同等）</p>
+<p class="p2"><br></p>
+<p class="p1">`ClipboardHistoryStore` が監視・保持を担い、`MenuController` がメニューへ展開する。</p>
+<p class="p2"><br></p>
+<p class="p1">**監視:**</p>
+<p class="p2"><br></p>
+<p class="p1">- `NSPasteboard.general.changeCount` を **0.75 秒間隔** の `Timer`（`.common` モード）でポーリング</p>
+<p class="p1">- テキスト（`.string`）のみ記録。空文字は無視</p>
+<p class="p1">- `org.nspasteboard.ConcealedType` / `TransientType` / `AutoGeneratedType` を宣言するコピー（パスワードマネージャ等）は記録しない</p>
+<p class="p1">- 起動時点のペーストボード内容は取り込まない</p>
+<p class="p2"><br></p>
+<p class="p1">**保持:**</p>
+<p class="p2"><br></p>
+<p class="p1">- 新しい順に保持。同一内容の再コピーは既存エントリを先頭へ移動（重複排除）</p>
+<p class="p1">- 最大保存件数（デフォルト 30、範囲 1–100）を超えた分は古い順に破棄</p>
+<p class="p2"><br></p>
+<p class="p1">**メニュー構造（メイン / 履歴メニュー共通）:**</p>
+<p class="p2"><br></p>
+<p class="p1">```</p>
+<p class="p1">履歴               （無効ヘッダー）</p>
+<p class="p1">├─ 1. 直近のコピー   (keyEquivalent: 1)</p>
+<p class="p1">├─ …</p>
+<p class="p1">├─ 10. 10件目       (keyEquivalent: 0)</p>
+<p class="p1">├─ 11 - 20  ▶       （フォルダ分割）</p>
+<p class="p1">└─ 21 - 30  ▶</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">| 仕様 | 値 |</p>
+<p class="p1">|------|-----|</p>
+<p class="p1">| インライン表示件数 | デフォルト 10（0–20、環境設定で変更可） |</p>
+<p class="p1">| フォルダあたりの件数 | デフォルト 10（1–20、環境設定で変更可） |</p>
+<p class="p1">| 番号表記 | 全体で連番。数値キーはインライン先頭 10 件のみ |</p>
+<p class="p1">| タイトル | 最初の非空行を 50 文字まで表示 |</p>
+<p class="p1">| ツールチップ | 本文（500 文字まで） |</p>
+<p class="p1">| 選択時 | スニペットと同じ自動ペーストパイプライン |</p>
+<p class="p2"><br></p>
+<p class="p1">**履歴の消去:** ステータスメニュー「履歴を消去」（確認アラート付き）、または環境設定 → 履歴タブ。</p>
+<p class="p2"><br></p>
 <p class="p1">### 3.4 自動ペースト処理</p>
 <p class="p2"><br></p>
 <p class="p1">`PasteController.paste` が以下を **順序どおり** 実行する。</p>
 <p class="p2"><br></p>
 <p class="p1">```mermaid</p>
 <p class="p1">sequenceDiagram</p>
-<p class="p1"><span class="Apple-converted-space">  </span>participant User</p>
-<p class="p1"><span class="Apple-converted-space">  </span>participant Menu as NSMenu</p>
-<p class="p1"><span class="Apple-converted-space">  </span>participant PC as PasteController</p>
-<p class="p1"><span class="Apple-converted-space">  </span>participant PB as NSPasteboard</p>
-<p class="p1"><span class="Apple-converted-space">  </span>participant App as Previous App</p>
-<p class="p1"><span class="Apple-converted-space">  </span>participant Sys as CGEvent</p>
+<p class="p1"><span class="Apple-converted-space">  </span>participant User</p>
+<p class="p1"><span class="Apple-converted-space">  </span>participant Menu as NSMenu</p>
+<p class="p1"><span class="Apple-converted-space">  </span>participant PC as PasteController</p>
+<p class="p1"><span class="Apple-converted-space">  </span>participant PB as NSPasteboard</p>
+<p class="p1"><span class="Apple-converted-space">  </span>participant App as Previous App</p>
+<p class="p1"><span class="Apple-converted-space">  </span>participant Sys as CGEvent</p>
 <p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>User-&gt;&gt;Menu: スニペット選択</p>
-<p class="p1"><span class="Apple-converted-space">  </span>Menu-&gt;&gt;PC: paste(text, previousApp)</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PC-&gt;&gt;PB: setString(content)</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PC-&gt;&gt;App: activate()</p>
-<p class="p1"><span class="Apple-converted-space">  </span>Note over PC: 0.1秒待機</p>
-<p class="p1"><span class="Apple-converted-space">  </span>PC-&gt;&gt;Sys: Cmd+V KeyDown/KeyUp</p>
-<p class="p1"><span class="Apple-converted-space">  </span>Sys-&gt;&gt;App: ペースト</p>
+<p class="p1"><span class="Apple-converted-space">  </span>User-&gt;&gt;Menu: スニペット選択</p>
+<p class="p1"><span class="Apple-converted-space">  </span>Menu-&gt;&gt;PC: paste(text, previousApp)</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PC-&gt;&gt;PB: setString(content)</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PC-&gt;&gt;App: activate()</p>
+<p class="p1"><span class="Apple-converted-space">  </span>Note over PC: 0.1秒待機</p>
+<p class="p1"><span class="Apple-converted-space">  </span>PC-&gt;&gt;Sys: Cmd+V KeyDown/KeyUp</p>
+<p class="p1"><span class="Apple-converted-space">  </span>Sys-&gt;&gt;App: ペースト</p>
 <p class="p1">```</p>
 <p class="p2"><br></p>
 <p class="p1">| ステップ | 処理 |</p>
@@ -224,7 +281,8 @@
 <p class="p1">| タブ | 内容 |</p>
 <p class="p1">|------|------|</p>
 <p class="p1">| 一般 | ログイン時起動（`LaunchAtLoginManager`） |</p>
-<p class="p1">| ショートカット | グローバルホットキー Recorder |</p>
+<p class="p1">| ショートカット | グローバルホットキー Recorder（メイン・履歴・スニペットの 3 系統） |</p>
+<p class="p1">| 履歴 | 最大保存件数・インライン表示件数・フォルダあたりの件数・履歴の消去 |</p>
 <p class="p1">| スニペット | `SnippetEditorView` 埋め込み |</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
@@ -250,14 +308,26 @@
 <p class="p1">| index | Int | 表示順 |</p>
 <p class="p1">| snippets | [Snippet] | 子スニペット |</p>
 <p class="p2"><br></p>
+<p class="p1">#### ClipItem（クリップボード履歴）</p>
+<p class="p2"><br></p>
+<p class="p1">| フィールド | 型 | 説明 |</p>
+<p class="p1">|-----------|-----|------|</p>
+<p class="p1">| id | UUID | 主キー |</p>
+<p class="p1">| content | String | コピーされたテキスト |</p>
+<p class="p1">| copiedAt | Date | コピー日時 |</p>
+<p class="p2"><br></p>
 <p class="p1">### 4.2 永続化</p>
 <p class="p2"><br></p>
-<p class="p1">| キー | 内容 |</p>
+<p class="p1">| 保存先 | 内容 |</p>
 <p class="p1">|------|------|</p>
-<p class="p1">| `snippetFolders` | `[SnippetFolder]` の JSON（`JSONEncoder`） |</p>
-<p class="p1">| `snippets` | レガシー（フラット配列）— 初回マイグレーション時のみ読込 |</p>
+<p class="p1">| UserDefaults `snippetFolders` | `[SnippetFolder]` の JSON（`JSONEncoder`） |</p>
+<p class="p1">| UserDefaults `snippets` | レガシー（フラット配列）— 初回マイグレーション時のみ読込 |</p>
+<p class="p1">| UserDefaults `clipboardMaxHistorySize` ほか | 履歴設定（最大件数・インライン件数・フォルダ件数） |</p>
+<p class="p1">| `~/Library/Application Support/Snippet Manager/clipboard-history.json` | `[ClipItem]` の JSON（アトミック書き込み） |</p>
 <p class="p2"><br></p>
 <p class="p1">**マイグレーション:** レガシー `snippets` が存在する場合、単一フォルダ「スニペット」に包んで `snippetFolders` へ移行。</p>
+<p class="p2"><br></p>
+<p class="p1">**履歴を UserDefaults に置かない理由:** 巨大テキストのコピーで plist が肥大化するのを避けるため、履歴のみファイル永続化とする。</p>
 <p class="p2"><br></p>
 <p class="p1">### 4.3 初期データ</p>
 <p class="p2"><br></p>
@@ -282,7 +352,13 @@
 <p class="p1">### 5.2 パフォーマンス</p>
 <p class="p2"><br></p>
 <p class="p1">- スニペット数数百件程度を想定（UserDefaults 同期 I/O）</p>
-<p class="p1">- メニュー再構築は `SnippetStore.$folders` 変更時のみ</p>
+<p class="p1">- メニュー再構築は `SnippetStore.$folders` / `ClipboardHistoryStore.$items` / 履歴表示設定の変更時のみ</p>
+<p class="p1">- 履歴ポーリングは changeCount 比較のみ（変化がなければ何もしない）</p>
+<p class="p2"><br></p>
+<p class="p1">### 5.4 プライバシー</p>
+<p class="p2"><br></p>
+<p class="p1">- 履歴はローカルの JSON ファイルのみに保存（外部送信なし）</p>
+<p class="p1">- `org.nspasteboard.ConcealedType` 等を宣言する秘匿コピーは記録しない</p>
 <p class="p2"><br></p>
 <p class="p1">### 5.3 ローカライズ</p>
 <p class="p2"><br></p>
@@ -295,13 +371,17 @@
 <p class="p2"><br></p>
 <p class="p1">```mermaid</p>
 <p class="p1">stateDiagram-v2</p>
-<p class="p1"><span class="Apple-converted-space">  </span>[*] --&gt; MenuBarIdle: 起動</p>
-<p class="p1"><span class="Apple-converted-space">  </span>MenuBarIdle --&gt; SnippetMenu: ホットキー / メニュー</p>
-<p class="p1"><span class="Apple-converted-space">  </span>SnippetMenu --&gt; MenuBarIdle: 選択→ペースト / Esc</p>
-<p class="p1"><span class="Apple-converted-space">  </span>MenuBarIdle --&gt; Preferences: 環境設定 ⌘,</p>
-<p class="p1"><span class="Apple-converted-space">  </span>MenuBarIdle --&gt; Preferences: スニペット編集 ⌘E</p>
-<p class="p1"><span class="Apple-converted-space">  </span>Preferences --&gt; MenuBarIdle: ウィンドウを閉じる</p>
-<p class="p1"><span class="Apple-converted-space">  </span>MenuBarIdle --&gt; [*]: 終了 ⌘Q</p>
+<p class="p1"><span class="Apple-converted-space">  </span>[*] --&gt; MenuBarIdle: 起動（履歴監視開始）</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MenuBarIdle --&gt; MainMenu: ⌘⇧V / メニューバー</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MenuBarIdle --&gt; HistoryMenu: ⌘⌃V</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MenuBarIdle --&gt; SnippetMenu: ⌘⇧B</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MainMenu --&gt; MenuBarIdle: 選択→ペースト / Esc</p>
+<p class="p1"><span class="Apple-converted-space">  </span>HistoryMenu --&gt; MenuBarIdle: 選択→ペースト / Esc</p>
+<p class="p1"><span class="Apple-converted-space">  </span>SnippetMenu --&gt; MenuBarIdle: 選択→ペースト / Esc</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MenuBarIdle --&gt; Preferences: 環境設定 ⌘,</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MenuBarIdle --&gt; Preferences: スニペット編集 ⌘E</p>
+<p class="p1"><span class="Apple-converted-space">  </span>Preferences --&gt; MenuBarIdle: ウィンドウを閉じる</p>
+<p class="p1"><span class="Apple-converted-space">  </span>MenuBarIdle --&gt; [*]: 終了 ⌘Q</p>
 <p class="p1">```</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
@@ -309,9 +389,11 @@
 <p class="p1">## 7. 既知の制限</p>
 <p class="p2"><br></p>
 <p class="p1">1. CGEvent による ⌘V は US キーボードレイアウトの仮想キーコード 9 を使用</p>
-<p class="p1">2. クリップボード履歴・フォルダ個別ホットキーは未実装</p>
-<p class="p1">3. スニペットメニューの数値キーは **サブメニューを開いた後** に有効</p>
-<p class="p1">4. UserDefaults のため大量データには不向き</p>
+<p class="p1">2. フォルダ個別ホットキーは未実装</p>
+<p class="p1">3. メニューの数値キーは **サブメニューを開いた後** に有効（履歴インライン分はメニュー直下で有効）</p>
+<p class="p1">4. UserDefaults のため大量スニペットには不向き</p>
+<p class="p1">5. クリップボード履歴はテキストのみ（画像・RTF・ファイルは対象外）</p>
+<p class="p1">6. 自アプリからのペースト時も履歴に記録される（Clipy と同挙動）</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
 <p class="p2"><br></p>
@@ -320,6 +402,7 @@
 <p class="p1">| 版 | 日付 | 内容 |</p>
 <p class="p1">|----|------|------|</p>
 <p class="p1">| 1.0 | 2026-07-01 | 初版作成 |</p>
+<p class="p1">| 1.1 | 2026-07-02 | クリップボード履歴機能（Clipy 同等）を追加。ホットキー 3 系統化、環境設定に履歴タブ追加、`SnippetMenuController` を `MenuController` へ改名 |</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
 <p class="p2"><br></p>

@@ -1,6 +1,6 @@
 # Snippet Manager
 
-A menu-bar resident snippet manager for macOS. Open a numbered menu via hotkey and auto-paste selected text into the frontmost app.
+A menu-bar resident snippet & clipboard history manager for macOS. Open a numbered menu via hotkey and auto-paste selected text into the frontmost app. Copied text is recorded automatically with a Clipy-like experience.
 
 **Japanese documentation:** [README.md](README.md)
 
@@ -11,8 +11,9 @@ A menu-bar resident snippet manager for macOS. Open a numbered menu via hotkey a
 | Feature | Description |
 |---------|-------------|
 | Agent app | No Dock icon; lives in the menu bar |
-| Global hotkey | Default `⌘⇧V` (user-configurable) |
-| Snippet menu | Numbered `NSMenu` with folders and numeric shortcuts |
+| Clipboard history | Auto-records copied text (up to 100 items, dedup, concealed-copy exclusion) |
+| Global hotkeys | Main `⌘⇧V` / History `⌘⌃V` / Snippets `⌘⇧B` (user-configurable) |
+| Menu | Numbered `NSMenu` with inline history + folder chunks and numeric shortcuts |
 | Auto-paste | Returns focus to the previous app and emulates `⌘V` |
 | Snippet editor | Folder tree, drag & drop, auto-save |
 | Launch at login | Toggle in Preferences |
@@ -42,11 +43,11 @@ Or open `Snippet Manager.xcodeproj` in Xcode and press **⌘R**.
 2. **Menu bar** — Look for the paperclip icon (if hidden, hold `Control` and drag the menu bar)
 3. **Preferences** — Menu bar → **Preferences…** (⌘,)
 
-### 3. Use a Snippet
+### 3. Use History & Snippets
 
 1. Place the cursor in any app
-2. Press the hotkey (default `⌘⇧V`)
-3. Open a folder and pick a snippet (or press `1`–`9` / `0`)
+2. Press a hotkey (Main `⌘⇧V` / History `⌘⌃V` / Snippets `⌘⇧B`)
+3. Pick a history item or snippet (or press `1`–`9` / `0`)
 4. Text is pasted automatically
 
 ## Documentation

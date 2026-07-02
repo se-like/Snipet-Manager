@@ -6,10 +6,11 @@ Audience: end users (developers see [SETUP.md](SETUP.md))
 
 ## 1. Overview
 
-Snippet Manager runs in the **menu bar** and lets you paste saved text snippets into any app via a global hotkey.
+Snippet Manager runs in the **menu bar** and lets you paste saved text snippets and **clipboard history** into any app via global hotkeys.
 
 - No Dock icon
 - Access via the **paperclip** icon in the menu bar
+- Copied text is recorded automatically (Clipy-like experience)
 
 ---
 
@@ -36,30 +37,41 @@ Without this, text is copied to the clipboard but **⌘V is not simulated**.
 
 ---
 
-## 3. Invoking Snippets
+## 3. Invoking History & Snippets
 
-### 3.1 Hotkey
+### 3.1 Hotkeys
 
-| Action | Default |
-|--------|---------|
-| Open snippet menu | `⌘⇧V` |
+| Action | Default | Contents |
+|--------|---------|----------|
+| Open main menu | `⌘⇧V` | Clipboard history + snippets |
+| Open history menu | `⌘⌃V` | Clipboard history only |
+| Open snippet menu | `⌘⇧B` | Snippets only |
 
 To change: **Preferences → Shortcuts** and record a new key.
 
 ### 3.2 Menu Usage
 
 1. Place the cursor in the target app
-2. Press the hotkey — menu appears at the **mouse cursor**
-3. Click a folder to open its submenu
-4. Click a snippet or use number keys
+2. Press a hotkey — menu appears at the **mouse cursor**
+3. History items are numbered, newest first; click a folder for its submenu
+4. Click an item or use number keys — it is pasted automatically
 
-| Key | Action (inside submenu) |
-|-----|-------------------------|
-| `1`–`9` | Snippets 1–9 |
-| `0` | 10th snippet |
+| Key | Action |
+|-----|--------|
+| `1`–`9` | Items 1–9 |
+| `0` | 10th item |
 | `Esc` | Close menu |
 
-The same hierarchy is available from the menu bar icon.
+The same content (history + snippet hierarchy) is available from the menu bar icon.
+
+### 3.3 About Clipboard History
+
+- Text copied with **⌘C in any app is recorded automatically** (default: up to 30 items)
+- The latest 10 items appear inline; older ones are grouped into folders like "11 - 20"
+- Re-copying identical text moves it to the top (no duplicates)
+- Copies marked as concealed (e.g. by password managers) are never recorded
+- History persists across app restarts
+- Tune the counts in **Preferences → History** (§5.1)
 
 ---
 
@@ -99,10 +111,22 @@ Changes are saved immediately to UserDefaults.
 
 | Item | Shortcut | Description |
 |------|------------|-------------|
+| History (numbered) | — | Clipboard history, newest first |
 | Snippets (tree) | — | Folder hierarchy |
+| Clear History | — | Delete all history (with confirmation) |
 | Edit Snippets | ⌘E | Snippets tab in Preferences |
-| Preferences… | ⌘, | General, Shortcuts, Snippets |
+| Preferences… | ⌘, | General, Shortcuts, History, Snippets |
 | Quit Snippet Manager | ⌘Q | Exit app |
+
+### 5.1 Preferences → History Tab
+
+| Setting | Default | Range |
+|---------|---------|-------|
+| Max history size | 30 | 1–100 |
+| Inline items in menu | 10 | 0–20 |
+| Items per folder | 10 | 1–20 |
+
+The "Clear History…" button deletes all history (with a confirmation dialog).
 
 ---
 
@@ -135,9 +159,9 @@ Changes are saved immediately to UserDefaults.
 
 ## 7. Feature Scope
 
-This app focuses on **snippet management** only. Not included:
+Not included:
 
-- Clipboard history
+- Images / rich text / files in clipboard history (text only)
 - Snippet import / export
 - Per-folder global hotkeys
 

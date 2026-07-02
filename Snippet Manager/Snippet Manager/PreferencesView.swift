@@ -36,6 +36,8 @@ struct PreferencesView: View {
       GeneralPreferencesView()
     case .shortcuts:
       ShortcutsPreferencesView()
+    case .history:
+      HistoryPreferencesView()
     case .snippets:
       SnippetsPreferencesView()
     }
@@ -101,18 +103,75 @@ struct ShortcutsPreferencesView: View {
   var body: some View {
     Form {
       Section {
+        LabeledContent("メインメニューを開く（履歴 + スニペット）") {
+          KeyboardShortcuts.Recorder(for: .showMainMenu)
+        }
+        LabeledContent("履歴メニューを開く") {
+          KeyboardShortcuts.Recorder(for: .showHistoryMenu)
+        }
         LabeledContent("スニペットメニューを開く") {
           KeyboardShortcuts.Recorder(for: .showSnippetPicker)
         }
       } header: {
         Text("グローバルショートカット")
       } footer: {
-        Text("設定したキーで番号付きスニペットメニューがマウス位置に表示されます。変更はすぐに反映されます。")
+        Text("設定したキーで番号付きメニューがマウス位置に表示されます。変更はすぐに反映されます。")
       }
     }
     .formStyle(.grouped)
     .padding()
     .navigationTitle("ショートカット")
+  }
+}
+
+// MARK: - 履歴
+
+struct HistoryPreferencesView: View {
+  @ObservedObject private var store = ClipboardHistoryStore.shared
+  @State private var showClearConfirmation = false
+
+  var body: some View {
+    Form {
+      Section {
+        Stepper(value: $store.maxHistorySize, in: ClipboardHistoryStore.maxHistorySizeRange) {
+          LabeledContent("履歴の最大保存件数", value: "\(store.maxHistorySize) 件")
+        }
+        Stepper(value: $store.inlineItemCount, in: ClipboardHistoryStore.inlineItemCountRange) {
+          LabeledContent("メニューに直接表示する件数", value: "\(store.inlineItemCount) 件")
+        }
+        Stepper(value: $store.itemsPerFolder, in: ClipboardHistoryStore.itemsPerFolderRange) {
+          LabeledContent("フォルダあたりの件数", value: "\(store.itemsPerFolder) 件")
+        }
+      } header: {
+        Text("クリップボード履歴")
+      } footer: {
+        Text("コピーしたテキストを自動で記録します。直接表示件数を超えた分は「11 - 20」のようなフォルダにまとまります。パスワードマネージャ等が秘匿指定したデータは記録されません。")
+      }
+
+      Section {
+        LabeledContent("現在の履歴", value: "\(store.items.count) 件")
+        Button("履歴を消去…", role: .destructive) {
+          showClearConfirmation = true
+        }
+        .disabled(store.items.isEmpty)
+      } header: {
+        Text("管理")
+      }
+    }
+    .formStyle(.grouped)
+    .padding()
+    .navigationTitle("履歴")
+    .confirmationDialog(
+      "クリップボード履歴をすべて消去しますか？",
+      isPresented: $showClearConfirmation
+    ) {
+      Button("消去", role: .destructive) {
+        store.clearHistory()
+      }
+      Button("キャンセル", role: .cancel) {}
+    } message: {
+      Text("この操作は取り消せません。")
+    }
   }
 }
 

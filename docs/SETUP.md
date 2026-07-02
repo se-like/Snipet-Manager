@@ -59,8 +59,10 @@ Output: `~/Library/Developer/Xcode/DerivedData/Snippet_Manager-*/Build/Products/
 |------|------|
 | `Snippet_ManagerApp.swift` | App entry, `Settings` scene |
 | `AppDelegate.swift` | Lifecycle, status item, hotkey wiring |
-| `SnippetStore.swift` | Persistence & business logic |
-| `SnippetMenuController.swift` | NSMenu popup |
+| `SnippetStore.swift` | Snippet persistence & business logic |
+| `ClipItem.swift` | Clipboard history item model |
+| `ClipboardHistoryStore.swift` | Pasteboard polling, history retention & persistence |
+| `MenuController.swift` | NSMenu popup (history + snippets) |
 | `SnippetOutlineView.swift` | Editor outline + D&D |
 | `SnippetEditorView.swift` | Editor UI shell |
 | `PreferencesView.swift` | Preferences tabs |
@@ -70,12 +72,16 @@ Output: `~/Library/Developer/Xcode/DerivedData/Snippet_Manager-*/Build/Products/
 ## Testing Checklist (Manual)
 
 1. Menu bar icon visible after launch
-2. Hotkey opens menu at cursor
+2. Hotkeys open menus at cursor (Main `⌘⇧V` / History `⌘⌃V` / Snippets `⌘⇧B`)
 3. Snippet selection pastes into TextEdit
-4. Accessibility denied → paste simulation fails (check Console)
-5. Preferences: launch at login toggle
-6. Editor: folder create/select/rename, snippet D&D between folders
-7. Menu rebuilds after store changes
+4. Copying text in any app adds it to history within ~1 s (top of the list)
+5. Re-copying identical text moves it to the top without duplication
+6. History persists across app restart (`~/Library/Application Support/Snippet Manager/clipboard-history.json`)
+7. Clear History (status menu / Preferences → History) empties the list after confirmation
+8. Accessibility denied → paste simulation fails (check Console)
+9. Preferences: launch at login toggle; history size/inline/folder steppers reflected in menus
+10. Editor: folder create/select/rename, snippet D&D between folders
+11. Menu rebuilds after store changes
 
 ## Documentation Index
 

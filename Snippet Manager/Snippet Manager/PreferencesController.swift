@@ -10,12 +10,14 @@ import Foundation
 enum PreferencesTab: String, Hashable, CaseIterable {
   case general
   case shortcuts
+  case history
   case snippets
 
   var title: String {
     switch self {
     case .general: "一般"
     case .shortcuts: "ショートカット"
+    case .history: "履歴"
     case .snippets: "スニペット"
     }
   }
@@ -24,6 +26,7 @@ enum PreferencesTab: String, Hashable, CaseIterable {
     switch self {
     case .general: "gearshape"
     case .shortcuts: "keyboard"
+    case .history: "clock"
     case .snippets: "doc.text"
     }
   }
