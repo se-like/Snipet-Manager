@@ -111,9 +111,11 @@ final class ClipboardHistoryStore: ObservableObject {
   func startMonitoring() {
     guard timer == nil else { return }
 
-    let timer = Timer(timeInterval: Self.pollingInterval, repeats: true) { _ in
-      Task { @MainActor in
-        ClipboardHistoryStore.shared.checkPasteboard()
+    let timer = Timer(timeInterval: Self.pollingInterval, repeats: true) { [weak self] _ in
+      // RunLoop.main に登録した Timer はメインスレッドで発火するため、
+      // Task による hop を挟まず同期実行する（メニュー表示中も確実に動かすため）
+      MainActor.assumeIsolated {
+        self?.checkPasteboard()
       }
     }
     // メニュー表示中（イベントトラッキング中）も監視を継続する
@@ -183,12 +185,18 @@ final class ClipboardHistoryStore: ObservableObject {
   private func save() {
     let url = Self.storageURL
     do {
+      // クリップボード内容は機微情報を含み得るため、所有者のみアクセス可にする
+      let directory = url.deletingLastPathComponent()
       try FileManager.default.createDirectory(
-        at: url.deletingLastPathComponent(),
-        withIntermediateDirectories: true
+        at: directory,
+        withIntermediateDirectories: true,
+        attributes: [.posixPermissions: 0o700]
       )
+      // 既存ディレクトリには attributes が適用されないため明示的に絞る
+      try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
       let data = try JSONEncoder().encode(items)
       try data.write(to: url, options: .atomic)
+      try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
     } catch {
       NSLog("ClipboardHistoryStore: failed to save history: \(error.localizedDescription)")
     }

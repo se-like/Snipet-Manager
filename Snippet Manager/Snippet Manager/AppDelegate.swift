@@ -147,7 +147,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     alert.addButton(withTitle: "消去")
     alert.addButton(withTitle: "キャンセル")
 
-    NSApp.activate(ignoringOtherApps: true)
+    NSApp.activate()
     if alert.runModal() == .alertFirstButtonReturn {
       ClipboardHistoryStore.shared.clearHistory()
     }

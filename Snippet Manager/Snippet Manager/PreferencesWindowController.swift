@@ -22,7 +22,7 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
 
     if let window {
       window.makeKeyAndOrderFront(nil)
-      NSApp.activate(ignoringOtherApps: true)
+      NSApp.activate()
       return
     }
 
@@ -40,7 +40,7 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
     window.delegate = self
     window.isReleasedWhenClosed = false
     window.makeKeyAndOrderFront(nil)
-    NSApp.activate(ignoringOtherApps: true)
+    NSApp.activate()
     self.window = window
   }
 

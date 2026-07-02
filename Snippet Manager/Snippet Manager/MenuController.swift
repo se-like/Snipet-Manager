@@ -167,18 +167,22 @@ final class MenuController: NSObject {
   }
 
   /// 複数行テキストは先頭の非空行をメニュータイトルに使う
+  /// 巨大なコピー内容でもメニュー構築が重くならないよう先頭部分のみ走査する
   private func menuTitle(for content: String) -> String {
-    let firstLine = content
+    let scanWindow = String(content.prefix(500))
+    let firstLine = scanWindow
       .components(separatedBy: .newlines)
       .first { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-    return firstLine?.trimmingCharacters(in: .whitespaces) ?? content
+    return firstLine?.trimmingCharacters(in: .whitespaces)
+      ?? scanWindow.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   private func tooltip(for content: String) -> String {
     let maxLength = 500
-    guard content.count > maxLength else { return content }
-    let index = content.index(content.startIndex, offsetBy: maxLength)
-    return String(content[..<index]) + shortenSymbol
+    guard let end = content.index(content.startIndex, offsetBy: maxLength, limitedBy: content.endIndex),
+          end < content.endIndex
+    else { return content }
+    return String(content[..<end]) + shortenSymbol
   }
 
   @objc private func selectHistoryItem(_ sender: NSMenuItem) {

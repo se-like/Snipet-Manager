@@ -16,7 +16,7 @@
 <p class="p2"><br></p>
 <p class="p1">| Field | Value |</p>
 <p class="p1">|-------|-------|</p>
-<p class="p1">| Document version | 1.1 |</p>
+<p class="p1">| Document version | 1.2 |</p>
 <p class="p1">| App version | 1.0 (MARKETING_VERSION) |</p>
 <p class="p1">| Last updated | 2026-07-02 |</p>
 <p class="p1">| Target OS | macOS 14.0+ |</p>
@@ -272,7 +272,7 @@
 <p class="p1">| UserDefaults `snippetFolders` | JSON array of folders |</p>
 <p class="p1">| UserDefaults `snippets` | Legacy flat list (migrated on first load) |</p>
 <p class="p1">| UserDefaults `clipboardMaxHistorySize` etc. | History settings (max / inline / per-folder counts) |</p>
-<p class="p1">| `~/Library/Application Support/Snippet Manager/clipboard-history.json` | JSON array of ClipItem (atomic writes) |</p>
+<p class="p1">| `~/Library/Application Support/Snippet Manager/clipboard-history.json` | JSON array of ClipItem (atomic writes, file mode 0600, directory 0700) |</p>
 <p class="p2"><br></p>
 <p class="p1">History lives in a file (not UserDefaults) so large copied texts cannot bloat the preferences plist.</p>
 <p class="p2"><br></p>
@@ -286,7 +286,7 @@
 <p class="p1">| Hardened Runtime | Enabled |</p>
 <p class="p1">| Permissions | Accessibility; Input Monitoring if needed |</p>
 <p class="p1">| Scale | Hundreds of snippets via UserDefaults |</p>
-<p class="p1">| Privacy | History stored locally only; concealed pasteboard types never recorded |</p>
+<p class="p1">| Privacy | History stored locally only (file 0600 / dir 0700); concealed pasteboard types never recorded; clipboard content never logged |</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
 <p class="p2"><br></p>
@@ -307,6 +307,7 @@
 <p class="p1">|-----|------|-------|</p>
 <p class="p1">| 1.0 | 2026-07-01 | Initial release |</p>
 <p class="p1">| 1.1 | 2026-07-02 | Added Clipy-equivalent clipboard history: 3 global hotkeys, History preferences tab, renamed `SnippetMenuController` to `MenuController` |</p>
+<p class="p1">| 1.2 | 2026-07-02 | Migrated to macOS 14 cooperative activation APIs (no deprecated calls), restricted history file to 0600/0700, optimized menu building for huge clips |</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
 <p class="p2"><br></p>

@@ -16,7 +16,7 @@
 <p class="p2"><br></p>
 <p class="p1">| 項目 | 内容 |</p>
 <p class="p1">|------|------|</p>
-<p class="p1">| ドキュメント版 | 1.1 |</p>
+<p class="p1">| ドキュメント版 | 1.2 |</p>
 <p class="p1">| 対象バージョン | 1.0 (MARKETING_VERSION) |</p>
 <p class="p1">| 最終更新 | 2026-07-02 |</p>
 <p class="p1">| 対象 OS | macOS 14.0+ |</p>
@@ -323,7 +323,7 @@
 <p class="p1">| UserDefaults `snippetFolders` | `[SnippetFolder]` の JSON（`JSONEncoder`） |</p>
 <p class="p1">| UserDefaults `snippets` | レガシー（フラット配列）— 初回マイグレーション時のみ読込 |</p>
 <p class="p1">| UserDefaults `clipboardMaxHistorySize` ほか | 履歴設定（最大件数・インライン件数・フォルダ件数） |</p>
-<p class="p1">| `~/Library/Application Support/Snippet Manager/clipboard-history.json` | `[ClipItem]` の JSON（アトミック書き込み） |</p>
+<p class="p1">| `~/Library/Application Support/Snippet Manager/clipboard-history.json` | `[ClipItem]` の JSON（アトミック書き込み・権限 0600、ディレクトリ 0700） |</p>
 <p class="p2"><br></p>
 <p class="p1">**マイグレーション:** レガシー `snippets` が存在する場合、単一フォルダ「スニペット」に包んで `snippetFolders` へ移行。</p>
 <p class="p2"><br></p>
@@ -358,7 +358,9 @@
 <p class="p1">### 5.4 プライバシー</p>
 <p class="p2"><br></p>
 <p class="p1">- 履歴はローカルの JSON ファイルのみに保存（外部送信なし）</p>
+<p class="p1">- 履歴ファイルは権限 0600（所有者のみ読み書き）、格納ディレクトリは 0700 に制限</p>
 <p class="p1">- `org.nspasteboard.ConcealedType` 等を宣言する秘匿コピーは記録しない</p>
+<p class="p1">- ログにクリップボード内容を出力しない（エラーメッセージのみ）</p>
 <p class="p2"><br></p>
 <p class="p1">### 5.3 ローカライズ</p>
 <p class="p2"><br></p>
@@ -403,6 +405,7 @@
 <p class="p1">|----|------|------|</p>
 <p class="p1">| 1.0 | 2026-07-01 | 初版作成 |</p>
 <p class="p1">| 1.1 | 2026-07-02 | クリップボード履歴機能（Clipy 同等）を追加。ホットキー 3 系統化、環境設定に履歴タブ追加、`SnippetMenuController` を `MenuController` へ改名 |</p>
+<p class="p1">| 1.2 | 2026-07-02 | macOS 14 の協調的アクティベーション API へ移行（deprecated API 排除）、履歴ファイルの権限を 0600/0700 に制限、巨大コピー時のメニュー構築を最適化 |</p>
 <p class="p2"><br></p>
 <p class="p1">---</p>
 <p class="p2"><br></p>

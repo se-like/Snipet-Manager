@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| Document version | 1.1 |
+| Document version | 1.2 |
 | App version | 1.0 (MARKETING_VERSION) |
 | Last updated | 2026-07-02 |
 | Target OS | macOS 14.0+ |
@@ -258,7 +258,7 @@ Sidebar via `NavigationSplitView`:
 | UserDefaults `snippetFolders` | JSON array of folders |
 | UserDefaults `snippets` | Legacy flat list (migrated on first load) |
 | UserDefaults `clipboardMaxHistorySize` etc. | History settings (max / inline / per-folder counts) |
-| `~/Library/Application Support/Snippet Manager/clipboard-history.json` | JSON array of ClipItem (atomic writes) |
+| `~/Library/Application Support/Snippet Manager/clipboard-history.json` | JSON array of ClipItem (atomic writes, file mode 0600, directory 0700) |
 
 History lives in a file (not UserDefaults) so large copied texts cannot bloat the preferences plist.
 
@@ -272,7 +272,7 @@ History lives in a file (not UserDefaults) so large copied texts cannot bloat th
 | Hardened Runtime | Enabled |
 | Permissions | Accessibility; Input Monitoring if needed |
 | Scale | Hundreds of snippets via UserDefaults |
-| Privacy | History stored locally only; concealed pasteboard types never recorded |
+| Privacy | History stored locally only (file 0600 / dir 0700); concealed pasteboard types never recorded; clipboard content never logged |
 
 ---
 
@@ -293,6 +293,7 @@ History lives in a file (not UserDefaults) so large copied texts cannot bloat th
 |-----|------|-------|
 | 1.0 | 2026-07-01 | Initial release |
 | 1.1 | 2026-07-02 | Added Clipy-equivalent clipboard history: 3 global hotkeys, History preferences tab, renamed `SnippetMenuController` to `MenuController` |
+| 1.2 | 2026-07-02 | Migrated to macOS 14 cooperative activation APIs (no deprecated calls), restricted history file to 0600/0700, optimized menu building for huge clips |
 
 ---
 

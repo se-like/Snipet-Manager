@@ -262,7 +262,7 @@ struct SnippetEditorView: View {
       bootstrapSelection()
     case .snippet(let folderID, let snippetID):
       store.deleteSnippet(id: snippetID, from: folderID)
-      if let folder = store.folder(id: folderID) {
+      if store.folder(id: folderID) != nil {
         self.selection = .folder(folderID)
       } else {
         self.selection = nil

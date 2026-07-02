@@ -14,12 +14,17 @@ enum PasteController {
   private static let vKeyCode: CGKeyCode = 9
 
   /// ① ペーストボード → ② フォーカス返却 → ③ 遅延 → ④ Cmd+V
+  @MainActor
   static func paste(text: String, returningFocusTo app: NSRunningApplication?) {
     let pasteboard = NSPasteboard.general
     pasteboard.clearContents()
     pasteboard.setString(text, forType: .string)
 
-    app?.activate(options: [.activateIgnoringOtherApps])
+    if let app {
+      // macOS 14+ の協調的アクティベーション: 自アプリが権利を譲ってから前面化する
+      NSApp.yieldActivation(to: app)
+      app.activate()
+    }
 
     DispatchQueue.main.asyncAfter(deadline: .now() + pasteDelay) {
       simulateCommandV()
