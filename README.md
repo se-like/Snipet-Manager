@@ -66,7 +66,10 @@ open -a "Snippet Manager"
 
 ## ライセンス
 
-本プロジェクトのライセンスはリポジトリ管理者が別途定義するまで未設定です。
+本プロジェクトは [MIT License](LICENSE) で公開しています。
+
+- 依存ライブラリのライセンス表記は [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) を参照してください
+- クリップボード履歴機能は [Clipy](https://github.com/Clipy/Clipy)（MIT License）の**挙動を参考**にしていますが、Clipy のソースコード・アイコン等の成果物は一切含みません（Clipy プロジェクトとは無関係です）
 
 ## リポジトリ
 

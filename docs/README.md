@@ -11,3 +11,5 @@
 | [DESIGN.md](DESIGN.md) | English | Developers / QA |
 | [DESIGN.html](DESIGN.html) | English | Print / PDF export |
 | [SETUP.md](SETUP.md) | English | Developers |
+| [LICENSE](../LICENSE) | English | All (MIT License) |
+| [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md) | English | All (dependency licenses) |

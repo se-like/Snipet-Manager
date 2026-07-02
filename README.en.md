@@ -66,7 +66,10 @@ Or open `Snippet Manager.xcodeproj` in Xcode and press **⌘R**.
 
 ## License
 
-License not yet defined by the repository owner.
+This project is released under the [MIT License](LICENSE).
+
+- Third-party license notices: see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
+- The clipboard history feature is *behaviorally inspired* by [Clipy](https://github.com/Clipy/Clipy) (MIT License), but **no Clipy source code, icons, or other assets are included**. This project is not affiliated with the Clipy project.
 
 ## Repository
 
